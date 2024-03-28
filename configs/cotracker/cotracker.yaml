@@ -1,0 +1,70 @@
+task: cotracker
+gpus: [0]
+exp_name: 'cotracker'
+scene: 'lego'
+
+train_dataset_module: lib.datasets.cotracker.tapvid_datasets
+test_dataset_module: lib.datasets.cotracker.tapvid_datasets
+network_module: lib.networks.cotracker.network
+loss_module: lib.train.losses.cotracker
+evaluator_module: lib.evaluators.cotracker
+visualizer_module: lib.visualizers.cotracker
+
+task_arg:
+    N_pixels: 8192
+    chunk_size: 16384
+
+network:
+    S: 8        # sliding_window_len
+    stride: 8   # model_stride
+    add_space_attn: True
+    latent_dim: 128
+    update_former:
+        num_heads: 8
+        hidden_size: 384
+        space_depth: 12
+        time_depth: 12
+    corr_block:
+        corr_levels: 4
+        corr_radius: 3
+
+train_dataset:
+    data_root: 'data/tapvid_davis'
+    split: 'train'
+    resize_to_256: True
+    queried_type: 'first'
+    seq_len: 24
+    traj_per_sample: 4
+
+test_dataset:
+    data_root: 'data/tapvid_davis'
+    split: 'test'
+    resize_to_256: True
+    queried_type: 'first'
+    seq_len: 24
+    traj_per_sample: 4
+
+train:
+    batch_size: 1
+    optim: adamW
+    lr: 5e-4
+    weight_decay: 1e-5
+    epoch: 20 # 100 * 500
+    scheduler:
+        type: 'one_cycle'
+        gamma: 0.1
+        decay_epochs: 20
+    num_workers: 1
+    collator: train
+
+test:
+    batch_size: 1
+    collator: test
+
+ep_iter: 100
+eval_ep: 10       # 50 iterations
+save_latest_ep: 20 # 10000 iterations
+log_interval: 100
+
+eval:
+    dataset_name: 'tapvid_first'
