@@ -6,6 +6,7 @@ from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from lib.config import cfg
 from lib.utils.data_utils import to_cuda
+from lib.datasets.cotracker.data_util import dataclass_to_cuda_
 
 
 class Trainer(object):
@@ -45,19 +46,22 @@ class Trainer(object):
         max_iter = len(data_loader)
         self.network.train()
         end = time.time()
-        for iteration, batch in enumerate(data_loader):
+        # print(data_loader[0])
+        iteration = 0
+        for batch, _ in data_loader:
             data_time = time.time() - end
             iteration = iteration + 1
 
-            batch = to_cuda(batch, self.device)
-            batch['step'] = self.global_step
+            # batch = to_cuda(batch, self.device)
+            batch = dataclass_to_cuda_(batch)
+            # batch['step'] = self.global_step
             output, loss, loss_stats, image_stats = self.network(batch)
 
             # training stage: loss; optimizer; scheduler
             loss = loss.mean()
             optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_value_(self.network.parameters(), 40)
+            torch.nn.utils.clip_grad_value_(self.network.parameters(), 10)
             optimizer.step()
 
             if cfg.local_rank > 0:
@@ -97,8 +101,8 @@ class Trainer(object):
         image_stats = {}
         data_size = len(data_loader)
         for batch in tqdm.tqdm(data_loader):
-            batch = to_cuda(batch, self.device)
-            batch['step'] = recorder.step
+            batch = dataclass_to_cuda_(batch)
+            # batch['step'] = recorder.step
             with torch.no_grad():
                 output, loss, loss_stats, _ = self.network(batch)
                 if evaluator is not None:

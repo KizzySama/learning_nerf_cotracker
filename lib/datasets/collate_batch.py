@@ -14,6 +14,7 @@ def collate_fn_test(batch):
     segmentation = torch.stack([b.segmentation for b in batch], dim=0)
     trajectory = torch.stack([b.trajectory for b in batch], dim=0)
     visibility = torch.stack([b.visibility for b in batch], dim=0)
+    valid = torch.stack([b.valid for b in batch], dim=0)
     query_points = None
     if batch[0].query_points is not None:
         query_points = torch.stack([b.query_points for b in batch], dim=0)
@@ -24,6 +25,7 @@ def collate_fn_test(batch):
         segmentation,
         trajectory,
         visibility,
+        valid=valid,
         seq_name=seq_name,
         query_points=query_points,
     )

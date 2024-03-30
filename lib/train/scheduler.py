@@ -16,7 +16,7 @@ def make_lr_scheduler(cfg, optimizer):
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer,
                                                   cfg.train.lr,
                                                   cfg.train.epoch,
-                                                  pct_start=0.05,
+                                                  pct_start=0.1,
                                                   cycle_momentum=False,
                                                   anneal_strategy="linear")
 

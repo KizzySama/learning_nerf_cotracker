@@ -6,7 +6,7 @@ _optimizer_factory = {
     'adam': torch.optim.Adam,
     'radam': RAdam,
     'sgd': torch.optim.SGD,
-    'adamW': torch.optim.adamw
+    'adamW': torch.optim.AdamW
 }
 
 

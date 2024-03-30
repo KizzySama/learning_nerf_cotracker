@@ -337,6 +337,10 @@ def save_model(net, optim, scheduler, recorder, model_dir, epoch, last=False):
         'recorder': recorder.state_dict(),
         'epoch': epoch
     }
+
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+
     if last:
         torch.save(model, os.path.join(model_dir, 'latest.pth'))
     else:
@@ -459,3 +463,46 @@ def save_pretrain(net, task, model_dir):
     torch.save(model, os.path.join(model_dir, 'latest.pth'))
 
 
+def generate_eval_input(batch):
+    rgbs = batch.video
+    trajs_g = batch.trajectory
+    vis_g = batch.visibility
+    B, T, C, H, W = rgbs.shape
+    assert C == 3
+    B, T, N, D = trajs_g.shape
+    device = rgbs.device
+
+    __, first_positive_inds = torch.max(vis_g, dim=1)
+    # We want to make sure that during training the model sees visible points
+    # that it does not need to track just yet: they are visible but queried from a later frame
+    N_rand = N // 4
+    # inds of visible points in the 1st frame
+    nonzero_inds = [torch.nonzero(vis_g[0, :, i]) for i in range(N)]
+    rand_vis_inds = torch.cat(
+        [
+            nonzero_row[torch.randint(len(nonzero_row), size=(1,))]
+            for nonzero_row in nonzero_inds
+        ],
+        dim=1,
+    )
+    first_positive_inds = torch.cat(
+        [rand_vis_inds[:, :N_rand], first_positive_inds[:, N_rand:]], dim=1
+    )
+    ind_array_ = torch.arange(T, device=device)
+    ind_array_ = ind_array_[None, :, None].repeat(B, 1, N)
+    assert torch.allclose(
+        vis_g[ind_array_ == first_positive_inds[:, None, :]],
+        torch.ones_like(vis_g),
+    )
+    assert torch.allclose(
+        vis_g[ind_array_ == rand_vis_inds[:, None, :]], torch.ones_like(vis_g)
+    )
+
+    gather = torch.gather(
+        trajs_g, 1, first_positive_inds[:, :, None, None].repeat(1, 1, N, 2)
+    )
+    xys = torch.diagonal(gather, dim1=1, dim2=2).permute(0, 2, 1)
+
+    queries = torch.cat([first_positive_inds[:, :, None], xys], dim=2)
+
+    return rgbs, queries

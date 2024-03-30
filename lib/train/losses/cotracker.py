@@ -10,8 +10,6 @@ class NetworkWrapper(nn.Module):
     def __init__(self, net, train_loader):
         super(NetworkWrapper, self).__init__()
         self.net = net
-        self.sequence_loss = nn.MSELoss(reduction='mean')
-        self.balanced_ce_loss = lambda x : -10. * torch.log(x) / torch.log(torch.Tensor([10.]))
 
     def forward(self, batch):
         rgbs = batch.video
@@ -56,7 +54,7 @@ class NetworkWrapper(nn.Module):
 
         queries = torch.cat([first_positive_inds[:, :, None], xys], dim=2)
 
-        output = self.net(batch)
+        output = self.net(rgbs, queries, is_train=True)
         predictions, __, visibility, train_data = output
 
         vis_predictions, coord_predictions, wind_inds, sort_inds = train_data

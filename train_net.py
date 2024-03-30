@@ -8,6 +8,7 @@ import torch.multiprocessing
 import torch
 import torch.distributed as dist
 import os
+import tqdm
 torch.autograd.set_detect_anomaly(True)
 
 if cfg.fix_random:
@@ -40,7 +41,7 @@ def train(cfg, network):
 
     set_lr_scheduler(cfg, scheduler)
 
-    for epoch in range(begin_epoch, cfg.train.epoch):
+    for epoch in tqdm.trange(begin_epoch, cfg.train.epoch):
         recorder.epoch = epoch
         if cfg.distributed:
             train_loader.batch_sampler.sampler.set_epoch(epoch)
@@ -53,7 +54,6 @@ def train(cfg, network):
         if (epoch + 1) % cfg.save_ep == 0 and cfg.local_rank == 0:
             save_model(network, optimizer, scheduler, recorder,
                        cfg.trained_model_dir, epoch)
-
 
         if (epoch + 1) % cfg.save_latest_ep == 0 and cfg.local_rank == 0:
             save_model(network,

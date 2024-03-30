@@ -31,7 +31,7 @@ class Dataset(data.Dataset):
         print("found %d unique videos in %s" % (len(self.points_dataset), self.data_root))
 
     def __getitem__(self, index):
-
+        # index = 2
         video_name = self.video_names[index]
         video = self.points_dataset[video_name]
         frames = video["video"]
@@ -45,7 +45,7 @@ class Dataset(data.Dataset):
 
             frames = np.array([decode(frame) for frame in frames])
 
-        target_points = self.points_dataset[video_name]["points"]
+        target_points = self.points_dataset[video_name]["points"].copy()
         if self.resize_to_256:
             frames = media.resize_video(frames, (256, 256))
             target_points *= np.array([256, 256])
@@ -105,15 +105,17 @@ class Dataset(data.Dataset):
                 seq_name=str(video_name)
             )
 
-            return sample
+            return sample, gotit
 
         else:
+            valids = torch.ones((T, N))
             query_points = torch.from_numpy(converted["query_points"])[0]  # T, N
             return CoTrackerData(
                 rgbs,
                 segs,
                 trajs,
                 visibles,
+                valid=valids,
                 seq_name=str(video_name),
                 query_points=query_points,
             )

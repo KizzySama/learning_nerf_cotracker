@@ -99,9 +99,9 @@ def make_data_loader(cfg, is_train=True, is_distributed=False, max_iter=-1):
                             num_workers=num_workers,
                             collate_fn=collator,
                             worker_init_fn=worker_init_fn,
-                            pin_memory=False)
+                            pin_memory=True)
 
-    # 遍历 DataLoader 并统计样本数量
+    # print datasets len
     print("Total samples in the dataset:", len(data_loader))
 
     return data_loader

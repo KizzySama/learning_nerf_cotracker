@@ -1,6 +1,9 @@
 from lib.config import cfg, args
 import numpy as np
 import os
+from lib.datasets.cotracker.data_util import dataclass_to_cuda_
+from lib.utils.net_utils import generate_eval_input
+
 ### SCRIPTS BEGINING ###
 def run_dataset():
     from lib.datasets import make_data_loader
@@ -57,19 +60,17 @@ def run_evaluate():
     evaluator = make_evaluator(cfg)
     net_time = []
     for batch in tqdm.tqdm(data_loader):
-        for k in batch:
-            if k != 'meta':
-                batch[k] = batch[k].cuda()
+        batch = dataclass_to_cuda_(batch)
         with torch.no_grad():
             torch.cuda.synchronize()
             start_time = time.time()
-            output = network(batch)
+            rgbs, queries = generate_eval_input(batch)
+            output = network(rgbs, queries)
             torch.cuda.synchronize()
             end_time = time.time()
         net_time.append(end_time - start_time)
-        evaluator.evaluate(output,
-                           )
-    evaluator.summarize()
+        evaluator.evaluate(output, batch)
+    # evaluator.summarize()
     if len(net_time) > 1:
         print('net_time: ', np.mean(net_time[1:]))
         print('fps: ', 1./np.mean(net_time[1:]))
@@ -97,12 +98,13 @@ def run_visualize():
     data_loader = make_data_loader(cfg, is_train=False)
     visualizer = make_visualizer(cfg)
     for batch in tqdm.tqdm(data_loader):
-        batch = to_cuda(batch)
+        batch = dataclass_to_cuda_(batch)
         with torch.no_grad():
-            output = network(batch)
-        visualizer.visualize(output, batch)
-    if visualizer.write_video:
-        visualizer.summarize()
+            rgbs, queries = generate_eval_input(batch)
+            output = network(rgbs, queries)
+        visualizer.visualize(output, batch, gt_tracks=batch.trajectory)
+    # if visualizer.write_video:
+    #     visualizer.summarize()
 
 if __name__ == '__main__':
     globals()['run_' + args.type]()

@@ -4,7 +4,6 @@ from tqdm import tqdm
 import logging
 import numpy as np
 from lib.config import cfg
-from lib.utils.cotracker.visualizer import Visualizer
 from lib.datasets.cotracker.data_util import dataclass_to_cuda_
 from typing import Optional, Mapping
 from torch.utils.tensorboard import SummaryWriter

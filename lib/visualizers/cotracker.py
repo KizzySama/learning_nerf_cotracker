@@ -216,7 +216,8 @@ class Visualizer:
         #  draw points
         for t in range(T):
             for i in range(N):
-                coord = (tracks[t, i, 0], tracks[t, i, 1])
+                # coord = (tracks[t, i, 0], tracks[t, i, 1])
+                coord = (gt_tracks[t, i, 0], gt_tracks[t, i, 1])
                 visibile = True
                 if visibility is not None:
                     visibile = visibility[0, t, i]
@@ -227,7 +228,7 @@ class Visualizer:
 
                         cv2.circle(
                             res_video[t],
-                            coord,
+                            (int(coord[0]), int(coord[1])),
                             int(self.linewidth * 2),
                             vector_colors[t, i].tolist(),
                             thickness=-1 if visibile else 2
